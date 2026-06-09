@@ -8,7 +8,7 @@ import { Wordmark } from "@/components/ui/Brand";
 import { IconButton } from "@/components/ui/IconButton";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
-import { TipAnchor } from "@/components/onboarding/Coachmarks";
+import { Spotlight } from "@/components/onboarding/Coachmarks";
 import { RideTypeRow } from "@/components/booking/RideTypeRow";
 import {
   MenuIcon, BellIcon, TargetIcon, SearchIcon,
@@ -48,6 +48,7 @@ export default function BookingPage() {
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden">
       <Toast />
+      <Spotlight />
 
       {/* ════════ MAP — exactly 44% of screen height ════════ */}
       <div className="relative" style={{ height: "44dvh", flexShrink: 0 }}>
@@ -138,7 +139,6 @@ export default function BookingPage() {
 
         {/* Search bar */}
         <div className="px-4 pt-3 pb-0">
-          <TipAnchor id="search" side="bottom">
           <motion.button
             data-coach="search"
             initial={{ y: 6, opacity: 0 }}
@@ -174,7 +174,6 @@ export default function BookingPage() {
               </motion.button>
             )}
           </motion.button>
-          </TipAnchor>
         </div>
 
         {/* Quick-destination chips */}
@@ -226,12 +225,10 @@ export default function BookingPage() {
           style={{ paddingBottom: "calc(0.6rem + var(--sab,0px))" }}
         >
           {/* Toolbar chips */}
-          <div className="flex gap-2" data-coach="request">
-            <TipAnchor id="addcard" side="top">
-              <Button variant="chip" full onClick={() => router.push("/payment")}>
-                <CardIcon size={15} /> Add card
-              </Button>
-            </TipAnchor>
+          <div className="flex gap-2">
+            <Button variant="chip" full data-coach="addcard" onClick={() => router.push("/payment")}>
+              <CardIcon size={15} /> Add card
+            </Button>
             <Button variant="chip" full onClick={() => router.push("/taximeter")}>
               Taximeter <ChevronRight size={13} />
             </Button>
@@ -241,11 +238,9 @@ export default function BookingPage() {
           </div>
 
           {/* Primary CTA with loading state */}
-          <TipAnchor id="request" side="top">
-            <Button full loading={requesting} onClick={onRequest}>
-              {requesting ? "Finding your taxi…" : "request bitaksi"}
-            </Button>
-          </TipAnchor>
+          <Button full loading={requesting} data-coach="request" onClick={onRequest}>
+            {requesting ? "Finding your taxi…" : "request bitaksi"}
+          </Button>
 
           {/* HCI link */}
           <motion.button
