@@ -46,6 +46,10 @@ type State = {
   destination: SavedAddress | null;
   cards: Card[];
 
+  // user's real GPS location (null until granted)
+  userLocation: SavedAddress | null;
+  locating: boolean;
+
   // active ride
   active: Active | null;
 
@@ -72,6 +76,9 @@ type State = {
 
   finishOnboarding: () => void;
   showToast: (msg: string, tone?: "ok" | "warn") => void;
+
+  /** Request the device's real GPS location and store it as the pickup. */
+  locateUser: () => void;
 };
 
 let _cancelTimeline: (() => void) | null = null;
@@ -172,6 +179,8 @@ export const useStore = create<State>((set, get) => ({
   rideTypeId: "standard",
   destination: null,
   cards: INITIAL_CARDS,
+  userLocation: null,
+  locating: false,
   active: null,
   onboarded: false,
   toast: null,
@@ -180,9 +189,10 @@ export const useStore = create<State>((set, get) => ({
   setDestination: (a) => set({ destination: a }),
 
   request: () => {
-    const { rideTypeId, destination } = get();
+    const { rideTypeId, destination, userLocation } = get();
     const dest = destination;
-    const route = dest ? buildRoute(PICKUP.lngLat, dest.lngLat) : [];
+    const origin = userLocation ?? PICKUP; // start from real GPS if granted
+    const route = dest ? buildRoute(origin.lngLat, dest.lngLat) : [];
 
     // payment / auth fault can fire at request time
     const payFault = rollFault("auth-failed");
@@ -191,7 +201,7 @@ export const useStore = create<State>((set, get) => ({
       active: {
         phase: "searching",
         rideTypeId,
-        pickup: PICKUP,
+        pickup: origin,
         destination: dest,
         driver: null,
         route,
@@ -275,6 +285,41 @@ export const useStore = create<State>((set, get) => ({
     setTimeout(() => {
       if (get().toast?.id === id) set({ toast: null });
     }, 2600);
+  },
+
+  locateUser: () => {
+    const { showToast } = get();
+    if (typeof navigator === "undefined" || !navigator.geolocation) {
+      showToast("Location isn't supported on this device", "warn");
+      return;
+    }
+    set({ locating: true });
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const lngLat: LngLat = [pos.coords.longitude, pos.coords.latitude];
+        set({
+          locating: false,
+          userLocation: {
+            id: "user-location",
+            title: "Your current location",
+            subtitle: "Detected via GPS",
+            lngLat,
+            kind: "saved",
+          },
+        });
+        showToast("Centered on your location", "ok");
+      },
+      (err) => {
+        set({ locating: false });
+        showToast(
+          err.code === err.PERMISSION_DENIED
+            ? "Location permission denied"
+            : "Couldn't get your location",
+          "warn",
+        );
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 30000 },
+    );
   },
 }));
 

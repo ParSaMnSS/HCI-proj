@@ -218,10 +218,11 @@ export default function MapView(props: MapViewProps) {
   return (
     <div
       ref={containerRef}
-      className="absolute inset-0"
       aria-label="Map"
-      // Explicit min dimensions ensure MapLibre always has a real size to measure
-      style={{ minWidth: 1, minHeight: 1 }}
+      // Inline styles beat MapLibre's injected ".maplibregl-map { position: relative }"
+      // rule, which would otherwise cancel `inset:0` and collapse the box to 1px.
+      // Explicit 100%/100% guarantees the map fills its parent.
+      style={{ position: "absolute", inset: 0, width: "100%", height: "100%" }}
     />
   );
 }

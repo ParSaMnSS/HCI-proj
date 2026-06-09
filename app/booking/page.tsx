@@ -31,8 +31,13 @@ export default function BookingPage() {
   const setRideType = useStore((s) => s.setRideType);
   const setDestination = useStore((s) => s.setDestination);
   const request     = useStore((s) => s.request);
-  const showToast   = useStore((s) => s.showToast);
+  const userLocation = useStore((s) => s.userLocation);
+  const locating     = useStore((s) => s.locating);
+  const locateUser   = useStore((s) => s.locateUser);
   const km = useMemo(() => tripKm(destination), [destination]);
+
+  // Pickup is the user's real GPS location once granted, else the mock default
+  const pickup = userLocation ?? PICKUP;
 
   const [requesting, setRequesting] = useState(false);
 
@@ -50,88 +55,47 @@ export default function BookingPage() {
       <Toast />
       <Spotlight />
 
-      {/* ════════ MAP — exactly 44% of screen height ════════ */}
-      <div className="relative" style={{ flex: "0 0 44%", minHeight: "180px" }}>
+      {/* ════════ HEADER — menu + wordmark, sits ABOVE the map ════════ */}
+      <div
+        className="relative z-20 flex shrink-0 items-center bg-white px-3 pb-2"
+        style={{ paddingTop: "calc(var(--sat,0px) + 10px)" }}
+      >
+        <IconButton label="Menu" tone="white" onClick={() => router.push("/menu")}>
+          <MenuIcon />
+        </IconButton>
+        <div className="pointer-events-none absolute inset-x-0 flex justify-center">
+          <Wordmark />
+        </div>
+        <div className="ml-auto">
+          <IconButton label="Notifications" tone="green">
+            <BellIcon size={18} />
+          </IconButton>
+        </div>
+      </div>
+
+      {/* ════════ MAP — fills space between header and ride-type selector ════════ */}
+      <div className="relative" style={{ flex: "0 0 40%", minHeight: "180px" }}>
         <MapView
-          center={destination ? destination.lngLat : PICKUP.lngLat}
+          center={destination ? destination.lngLat : pickup.lngLat}
           zoom={destination ? 11 : 14}
-          pickup={PICKUP.lngLat}
+          pickup={pickup.lngLat}
           destination={destination?.lngLat ?? null}
           route={null}
           idleTaxis={destination ? [] : IDLE_TAXIS}
           fitBounds={!!destination}
         />
 
-        {/* Top-left stacked controls */}
-        <div
-          className="absolute left-3 z-10 flex flex-col gap-2"
-          style={{ top: "calc(var(--sat,0px) + 10px)" }}
-        >
-          <IconButton label="Menu" tone="white" onClick={() => router.push("/menu")}>
-            <MenuIcon />
-          </IconButton>
-          <IconButton label="Notifications" tone="green">
-            <BellIcon size={18} />
-          </IconButton>
-        </div>
-
-        {/* Wordmark */}
-        <div
-          className="pointer-events-none absolute inset-x-0 z-0 flex justify-center"
-          style={{ top: "calc(var(--sat,0px) + 10px)" }}
-        >
-          <Wordmark />
-        </div>
-
-        {/* Pickup address tag */}
-        <motion.button
-          onClick={() => router.push("/destination")}
-          whileTap={{ scale: 0.97 }}
-          data-coach="pickup"
-          className="absolute left-1/2 z-10 -translate-x-1/2 flex items-center gap-2 rounded-2xl bg-white px-3 py-2.5 shadow-xl"
-          style={{ top: "45%" }}
-        >
-          <span className="rounded-lg bg-brand px-2 py-1 text-[11px] font-black text-cream leading-none">
-            1 min
-          </span>
-          <span className="max-w-[170px] truncate text-sm font-bold text-ink">
-            {PICKUP.title}
-          </span>
-          <ChevronRight size={14} />
-        </motion.button>
-
-        {/* Pulsing pickup pin */}
-        <div className="pointer-events-none absolute left-1/2 top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2">
-          <span className="relative grid h-6 w-6 place-items-center">
-            <span className="pulse-ring absolute inset-0 rounded-full opacity-50" />
-            <span className="h-6 w-6 rounded-full border-[3px] border-white bg-brand shadow-lg" />
-          </span>
-        </div>
-
-        {/* GPS button */}
+        {/* GPS button — the ONLY overlay on the map. Requests real location. */}
         <div className="absolute bottom-3 right-3 z-10">
           <IconButton
             label="My location" tone="white"
-            onClick={() => showToast("Centered on your location", "ok")}
+            onClick={locateUser}
           >
-            <TargetIcon size={18} />
+            {locating
+              ? <span className="spin h-[18px] w-[18px] rounded-full border-2 border-brand/30 border-t-brand" />
+              : <TargetIcon size={18} />}
           </IconButton>
         </div>
-
-        {/* Destination confirmed banner */}
-        <AnimatePresence>
-          {destination && (
-            <motion.div
-              initial={{ opacity: 0, y: -8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              className="absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-lg"
-            >
-              <span className="h-2.5 w-2.5 rounded-full bg-alert" />
-              <span className="max-w-[160px] truncate text-xs font-bold text-ink">{destination.title}</span>
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
 
       {/* ════════ BOTTOM PANEL ════════ */}

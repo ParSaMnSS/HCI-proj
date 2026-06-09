@@ -82,12 +82,14 @@ export function Spotlight() {
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       transition={{ duration: 0.25 }}
-      className="fixed inset-0 z-[90] pointer-events-auto"
-      onClick={advance}
+      className="fixed inset-0 z-[90]"
       aria-label="Onboarding overlay"
     >
-      {/* Dark overlay with an animated spotlight cutout */}
-      <svg className="absolute inset-0 w-full h-full" style={{ display: "block" }}>
+      {/* Dark overlay with an animated spotlight cutout (purely visual) */}
+      <svg
+        className="absolute inset-0 w-full h-full pointer-events-none"
+        style={{ display: "block" }}
+      >
         <defs>
           <mask id="spotlight-mask">
             <rect x="0" y="0" width="100%" height="100%" fill="white" />
@@ -114,7 +116,19 @@ export function Spotlight() {
         )}
       </svg>
 
-      {/* Tooltip pill — glides to point at the active spotlight target */}
+      {/* Full-screen transparent click-catcher — advances on tap anywhere */}
+      <button
+        type="button"
+        onClick={advance}
+        aria-label="Continue tutorial"
+        className="absolute inset-0 h-full w-full cursor-pointer"
+        style={{ background: "transparent", border: 0 }}
+      />
+
+      {/* Tooltip pill — glides to point at the active spotlight target.
+          pointer-events-none on the wrapper so taps anywhere (even over the
+          pill's inflated bounding box) fall through to the click-catcher.
+          Only the visible pill + × button re-enable pointer events. */}
       <motion.div
         initial={false}
         animate={{
@@ -123,9 +137,8 @@ export function Spotlight() {
           ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : {}),
         }}
         transition={GLIDE}
-        className="absolute pointer-events-auto"
+        className="absolute z-10 pointer-events-none"
         style={{ transform: "translateX(-50%)" }}
-        onClick={(e) => e.stopPropagation()}
       >
         {/* Arrow pointing toward the element */}
         <span
@@ -142,9 +155,11 @@ export function Spotlight() {
           }}
         />
 
-        {/* Pill bubble — text cross-fades on step change */}
+        {/* Pill bubble — text cross-fades on step change. Tapping the pill
+            itself also advances (so it's never a dead zone). */}
         <div
-          className="flex items-center gap-2 rounded-2xl px-4 py-2.5 shadow-lg"
+          onClick={advance}
+          className="flex items-center gap-2 rounded-2xl px-4 py-2.5 shadow-lg pointer-events-auto cursor-pointer"
           style={{ background: "var(--brand)", whiteSpace: "nowrap" }}
         >
           {/* Step dots */}
