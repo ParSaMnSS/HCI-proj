@@ -1,26 +1,151 @@
 @import "tailwindcss";
+@import "maplibre-gl/dist/maplibre-gl.css";
 
+/* ── BiTaksi brand palette (extracted from app screenshots) ───────────── */
 :root {
-  --background: #ffffff;
-  --foreground: #171717;
+  --brand: #2e1a8f;          /* primary deep indigo */
+  --brand-700: #3a23ad;
+  --brand-deep: #2a1287;     /* splash / deep fills */
+  --cream: #f5efd9;          /* logo + primary button label */
+  --taxi: #f5c518;           /* taxi yellow accents */
+  --taxi-deep: #e0a90a;
+  --green: #1e9e5a;          /* bell, discounted timer, status */
+  --alert: #e8470f;          /* warnings, road badge */
+  --ink: #15161a;            /* primary text */
+  --muted: #8a8f9c;          /* secondary text */
+  --chip: #eef0f6;           /* grey chips */
+  --lavender: #eaeafb;       /* promo card / selected tint */
+  --surface: #ffffff;
+  --hairline: #e7e9f0;
 }
 
 @theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
+  --color-brand: var(--brand);
+  --color-brand-700: var(--brand-700);
+  --color-brand-deep: var(--brand-deep);
+  --color-cream: var(--cream);
+  --color-taxi: var(--taxi);
+  --color-taxi-deep: var(--taxi-deep);
+  --color-green: var(--green);
+  --color-alert: var(--alert);
+  --color-ink: var(--ink);
+  --color-muted: var(--muted);
+  --color-chip: var(--chip);
+  --color-lavender: var(--lavender);
+  --color-surface: var(--surface);
+  --color-hairline: var(--hairline);
+  --font-sans: var(--font-nunito), system-ui, sans-serif;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
-  }
+* {
+  -webkit-tap-highlight-color: transparent;
+}
+
+html,
+body {
+  height: 100%;
 }
 
 body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+  background: #d9dee6;
+  color: var(--ink);
+  font-family: var(--font-sans);
+  overscroll-behavior: none;
+}
+
+/* The phone frame the whole app lives inside (web demo of a mobile app) */
+.phone-shell {
+  width: 100%;
+  max-width: 430px;
+  margin: 0 auto;
+  min-height: 100dvh;
+  position: relative;
+  background: #fff;
+  box-shadow: 0 30px 80px rgba(20, 20, 40, 0.25);
+  overflow: hidden;
+}
+
+@media (min-width: 480px) {
+  .phone-shell {
+    min-height: min(920px, 100dvh);
+    margin-top: max(0px, calc((100dvh - 920px) / 2));
+    border-radius: 38px;
+  }
+}
+
+/* Hide scrollbars on horizontal chip rows */
+.no-scrollbar::-webkit-scrollbar {
+  display: none;
+}
+.no-scrollbar {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+@keyframes sheet-up {
+  from {
+    transform: translateY(16px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+.animate-sheet {
+  animation: sheet-up 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pop-in {
+  from {
+    transform: scale(0.94);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+.animate-pop {
+  animation: pop-in 0.22s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+@keyframes pulse-ring {
+  0% {
+    transform: scale(0.7);
+    opacity: 0.6;
+  }
+  100% {
+    transform: scale(2.2);
+    opacity: 0;
+  }
+}
+.pulse-ring::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: 9999px;
+  background: var(--brand);
+  animation: pulse-ring 1.6s ease-out infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+.animate-spin-slow {
+  animation: spin 1s linear infinite;
+}
+
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.animate-fade {
+  animation: fade-in 0.2s ease-out;
 }

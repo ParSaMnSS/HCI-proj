@@ -1,0 +1,20 @@
+
+> bitaksi-web@0.1.0 dev
+> next dev
+
+▲ Next.js 16.2.7 (Turbopack)
+- Local:         http://localhost:3000
+- Network:       http://192.168.168.129:3000
+✓ Ready in 480ms
+
+ GET / 200 in 1671ms (next.js: 1547ms, application-code: 124ms)
+ GET /booking 200 in 1099ms (next.js: 1030ms, application-code: 68ms)
+ GET /destination 200 in 294ms (next.js: 249ms, application-code: 45ms)
+ GET /ride 200 in 340ms (next.js: 309ms, application-code: 31ms)
+ GET /payment 200 in 269ms (next.js: 239ms, application-code: 30ms)
+ GET /ux-notes 200 in 284ms (next.js: 243ms, application-code: 41ms)
+ GET /menu 200 in 263ms (next.js: 230ms, application-code: 32ms)
+ GET /booking 200 in 49ms (next.js: 4ms, application-code: 44ms)
+ GET /payment 200 in 34ms (next.js: 4ms, application-code: 31ms)
+ GET /ux-notes 200 in 41ms (next.js: 3ms, application-code: 38ms)
+ GET /destination 200 in 36ms (next.js: 3ms, application-code: 33ms)
