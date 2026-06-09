@@ -19,14 +19,15 @@ export const viewport: Viewport = {
   initialScale: 1,
   maximumScale: 1,
   themeColor: "#2e1a8f",
+  viewportFit: "cover",
 };
 
 export default function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
   return (
-    <html lang="en" className={`${nunito.variable} h-full antialiased`}>
-      <body className="min-h-full">
+    <html lang="en" className={nunito.variable}>
+      <body>
         <div className="phone-shell">{children}</div>
       </body>
     </html>

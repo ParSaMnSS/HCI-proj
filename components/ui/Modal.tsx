@@ -1,27 +1,32 @@
 "use client";
 
-/** Centered modal card matching BiTaksi's dialogs (white rounded card, dimmed bg). */
-export function Modal({
-  children,
-  onDismiss,
-}: {
+import { motion } from "framer-motion";
+
+export function Modal({ children, onDismiss }: {
   children: React.ReactNode;
   onDismiss?: () => void;
 }) {
   return (
-    <div
-      className="absolute inset-0 z-50 flex items-center justify-center p-6 animate-fade"
-      style={{ background: "rgba(20,18,60,0.45)" }}
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="absolute inset-0 z-50 flex items-center justify-center px-6"
+      style={{ background: "rgba(20,18,60,0.48)" }}
       onClick={onDismiss}
       role="dialog"
       aria-modal="true"
     >
-      <div
-        className="w-full max-w-[340px] rounded-3xl bg-surface p-6 shadow-2xl animate-pop"
+      <motion.div
+        initial={{ scale: 0.88, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        exit={{ scale: 0.88, opacity: 0 }}
+        transition={{ type: "spring", stiffness: 340, damping: 28 }}
+        className="w-full max-w-[360px] rounded-3xl bg-white p-7 shadow-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         {children}
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

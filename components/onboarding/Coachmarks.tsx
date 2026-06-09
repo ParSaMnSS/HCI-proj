@@ -1,32 +1,15 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useStore } from "@/lib/store";
 import { Button } from "@/components/ui/Button";
 
-// First-run onboarding overlay (UX improvement: BiTaksi has none).
-// Walks first-time users through the 4 key controls with plain-language tips.
 const STEPS = [
-  {
-    sel: "search",
-    title: "1 · Set where you’re going",
-    body: "Tap here to search a destination, pick a saved place, or choose it on the map.",
-  },
-  {
-    sel: "pickup",
-    title: "2 · Check your pickup",
-    body: "This is where your taxi will meet you. Tap it any time to adjust the exact spot.",
-  },
-  {
-    sel: "rides",
-    title: "3 · Pick a ride & see the price",
-    body: "Every ride type shows its fare and arrival time up front — no surprises.",
-  },
-  {
-    sel: "request",
-    title: "4 · Request your bitaksi",
-    body: "One tap to book. You can cancel free for the first 30 seconds if you change your mind.",
-  },
+  { title: "1 · Set your destination", body: "Tap here to search a place, pick a recent, or choose it on the map." },
+  { title: "2 · Check your pickup", body: "Tap the address tag on the map to adjust exactly where your taxi meets you." },
+  { title: "3 · Pick a ride type", body: "All types show their fare and arrival time right here — no surprises." },
+  { title: "4 · Request your bitaksi", body: "One tap to book. Cancel free within the first 30 seconds if you change your mind." },
 ];
 
 export function Coachmarks() {
@@ -42,30 +25,52 @@ export function Coachmarks() {
   const last = i === STEPS.length - 1;
 
   return (
-    <div className="absolute inset-0 z-[70] bg-black/55 animate-fade">
-      <div className="absolute inset-x-5 top-1/2 -translate-y-1/2 rounded-3xl bg-surface p-6 shadow-2xl animate-pop">
-        <div className="mb-3 flex gap-1.5">
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="absolute inset-0 z-[70] flex items-center justify-center px-5"
+      style={{ background: "rgba(20,15,55,0.65)" }}
+    >
+      <motion.div
+        initial={{ scale: 0.9, opacity: 0, y: 20 }}
+        animate={{ scale: 1, opacity: 1, y: 0 }}
+        transition={{ type: "spring", stiffness: 320, damping: 26 }}
+        className="w-full max-w-[360px] rounded-3xl bg-white p-7 shadow-2xl"
+      >
+        {/* Progress dots */}
+        <div className="mb-5 flex gap-2">
           {STEPS.map((_, idx) => (
-            <span
+            <motion.span
               key={idx}
-              className={`h-1.5 flex-1 rounded-full ${idx <= i ? "bg-brand" : "bg-hairline"}`}
+              animate={{ width: idx === i ? "2.5rem" : "0.5rem" }}
+              className="h-2 rounded-full bg-brand/20"
+              style={{ backgroundColor: idx <= i ? "var(--brand)" : undefined }}
             />
           ))}
         </div>
-        <h2 className="text-xl font-black text-ink">{step.title}</h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-muted">{step.body}</p>
-        <div className="mt-5 flex items-center justify-between gap-3">
-          <button
-            onClick={finish}
-            className="text-sm font-bold text-muted underline"
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, x: 16 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: -16 }}
+            transition={{ duration: 0.2 }}
           >
+            <h2 className="text-2xl font-black text-ink">{step.title}</h2>
+            <p className="mt-3 text-base leading-relaxed text-muted">{step.body}</p>
+          </motion.div>
+        </AnimatePresence>
+
+        <div className="mt-7 flex items-center justify-between gap-4">
+          <button onClick={finish} className="text-sm font-bold text-muted underline">
             Skip tour
           </button>
-          <Button onClick={() => (last ? finish() : setI(i + 1))} className="px-6 py-3 text-base">
-            {last ? "Got it" : "Next"}
+          <Button onClick={() => last ? finish() : setI(i + 1)}>
+            {last ? "Got it!" : "Next →"}
           </Button>
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
 }

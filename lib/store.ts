@@ -27,7 +27,7 @@ export type RidePhase =
   | "completed" // trip finished → rate & pay
   | "cancelled";
 
-type Active = {
+export type Active = {
   phase: RidePhase;
   rideTypeId: string;
   pickup: SavedAddress;

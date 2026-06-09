@@ -1,37 +1,51 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { motion } from "framer-motion";
 import { Wordmark } from "@/components/ui/Brand";
 
-// Splash → auto-advance to the booking screen, matching the app launch.
 export default function Splash() {
   const router = useRouter();
-  const [leaving, setLeaving] = useState(false);
 
   useEffect(() => {
-    const t1 = setTimeout(() => setLeaving(true), 1500);
-    const t2 = setTimeout(() => router.push("/booking"), 1900);
-    return () => {
-      clearTimeout(t1);
-      clearTimeout(t2);
-    };
+    const t = setTimeout(() => router.push("/booking"), 2000);
+    return () => clearTimeout(t);
   }, [router]);
 
   return (
     <div
-      className="absolute inset-0 grid place-items-center transition-opacity duration-300"
-      style={{ background: "var(--brand-deep)", opacity: leaving ? 0 : 1 }}
+      className="absolute inset-0 flex flex-col items-center justify-center"
+      style={{ background: "var(--brand-deep)" }}
     >
-      <div className="animate-pop">
-        <Wordmark tone="cream" />
-      </div>
-      <a
-        href="/booking"
-        className="absolute bottom-8 text-cream/60 text-sm underline"
+      <motion.div
+        initial={{ scale: 0.7, opacity: 0 }}
+        animate={{ scale: 1, opacity: 1 }}
+        transition={{ type: "spring", stiffness: 280, damping: 22 }}
       >
-        Skip
-      </a>
+        <Wordmark tone="cream" />
+      </motion.div>
+
+      {/* Loading dots */}
+      <div className="absolute bottom-16 flex gap-2">
+        {[0, 1, 2].map((i) => (
+          <motion.span
+            key={i}
+            className="h-2 w-2 rounded-full bg-cream/50"
+            animate={{ opacity: [0.3, 1, 0.3] }}
+            transition={{ repeat: Infinity, duration: 1.2, delay: i * 0.2 }}
+          />
+        ))}
+      </div>
+
+      {/* Skip */}
+      <button
+        onClick={() => router.push("/booking")}
+        className="absolute bottom-6 text-cream/40 text-sm"
+        style={{ paddingBottom: "var(--sab, 0px)" }}
+      >
+        tap to skip
+      </button>
     </div>
   );
 }

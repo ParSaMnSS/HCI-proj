@@ -18,3 +18,5 @@
  GET /payment 200 in 34ms (next.js: 4ms, application-code: 31ms)
  GET /ux-notes 200 in 41ms (next.js: 3ms, application-code: 38ms)
  GET /destination 200 in 36ms (next.js: 3ms, application-code: 33ms)
+✓ Compiled in 47ms
+✓ Compiled in 44ms
