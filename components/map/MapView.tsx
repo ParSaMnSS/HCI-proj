@@ -10,30 +10,22 @@ export type MapViewProps = {
   zoom?: number;
   pickup?: LngLat | null;
   destination?: LngLat | null;
-  /** Route polyline; segments coloured for mock traffic. */
   route?: LngLat[] | null;
-  /** Driver marker position (animated by parent via prop changes). */
   driver?: LngLat | null;
-  /** Idle yellow taxis scattered near the user (booking screen flavour). */
   idleTaxis?: LngLat[];
-  /** Fit map to show both pickup and destination. */
   fitBounds?: boolean;
   interactive?: boolean;
 };
 
-// ── small DOM marker factories (no image assets needed) ──
 function pinEl(kind: "pickup" | "dest") {
   const el = document.createElement("div");
   el.style.cssText =
     "width:26px;height:26px;border-radius:50%;display:grid;place-items:center;" +
-    "box-shadow:0 4px 10px rgba(20,20,40,.35);border:3px solid #fff;" +
-    (kind === "pickup"
-      ? "background:#2e1a8f;"
-      : "background:#2e1a8f;");
+    "box-shadow:0 4px 10px rgba(20,20,40,.35);border:3px solid #fff;background:#2e1a8f;";
   const dot = document.createElement("div");
-  dot.style.cssText =
-    "width:9px;height:9px;border-radius:50%;background:#fff;";
+  dot.style.cssText = "width:9px;height:9px;border-radius:50%;background:#fff;";
   el.appendChild(dot);
+  if (kind === "dest") el.style.background = "#e8470f";
   return el;
 }
 
@@ -76,6 +68,7 @@ export default function MapView(props: MapViewProps) {
   // init once
   useEffect(() => {
     if (!containerRef.current || mapRef.current) return;
+
     const map = new maplibregl.Map({
       container: containerRef.current,
       style: MAP_STYLE,
@@ -85,12 +78,24 @@ export default function MapView(props: MapViewProps) {
       interactive,
     });
     mapRef.current = map;
+
     map.on("load", () => {
       readyRef.current = true;
+      // Force a resize so MapLibre picks up the actual container dimensions
+      // (needed when the container height is set by flexbox percentages)
+      map.resize();
       drawRoute();
       drawStaticMarkers();
     });
+
+    // ResizeObserver keeps the map properly sized if the container changes
+    const ro = new ResizeObserver(() => {
+      if (mapRef.current) mapRef.current.resize();
+    });
+    ro.observe(containerRef.current);
+
     return () => {
+      ro.disconnect();
       map.remove();
       mapRef.current = null;
       readyRef.current = false;
@@ -98,7 +103,6 @@ export default function MapView(props: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // route layer with mock traffic colours
   function drawRoute() {
     const map = mapRef.current;
     if (!map || !readyRef.current) return;
@@ -110,7 +114,6 @@ export default function MapView(props: MapViewProps) {
     if (map.getSource(SRC)) map.removeSource(SRC);
     if (coords.length < 2) return;
 
-    // split into segments, each tinted green/orange/red for "traffic"
     const trafficColors = ["#1e9e5a", "#f5c518", "#e8470f"];
     const features = [];
     for (let i = 0; i < coords.length - 1; i++) {
@@ -169,7 +172,6 @@ export default function MapView(props: MapViewProps) {
     }
   }
 
-  // react to route / marker changes
   useEffect(() => {
     drawRoute();
     drawStaticMarkers();
@@ -189,7 +191,6 @@ export default function MapView(props: MapViewProps) {
     fitBounds,
   ]);
 
-  // animated driver marker
   useEffect(() => {
     const map = mapRef.current;
     if (!map) return;
@@ -207,7 +208,6 @@ export default function MapView(props: MapViewProps) {
     }
   }, [driver]);
 
-  // recenter when center prop changes (and not fitting bounds)
   useEffect(() => {
     const map = mapRef.current;
     if (map && readyRef.current && !fitBounds) {
@@ -216,5 +216,13 @@ export default function MapView(props: MapViewProps) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [JSON.stringify(center), zoom]);
 
-  return <div ref={containerRef} className="absolute inset-0" aria-label="Map" />;
+  return (
+    <div
+      ref={containerRef}
+      className="absolute inset-0"
+      aria-label="Map"
+      // Explicit min dimensions ensure MapLibre always has a real size to measure
+      style={{ minWidth: 1, minHeight: 1 }}
+    />
+  );
 }

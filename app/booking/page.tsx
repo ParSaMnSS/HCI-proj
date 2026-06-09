@@ -2,7 +2,7 @@
 
 import dynamic from "next/dynamic";
 import { useRouter } from "next/navigation";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Wordmark } from "@/components/ui/Brand";
 import { IconButton } from "@/components/ui/IconButton";
@@ -34,15 +34,24 @@ export default function BookingPage() {
   const showToast   = useStore((s) => s.showToast);
   const km = useMemo(() => tripKm(destination), [destination]);
 
-  function onRequest() { request(); router.push("/ride"); }
+  const [requesting, setRequesting] = useState(false);
+
+  function onRequest() {
+    setRequesting(true);
+    // brief delay so button feedback is visible before navigation
+    setTimeout(() => {
+      request();
+      router.push("/ride");
+    }, 340);
+  }
 
   return (
     <div className="absolute inset-0 flex flex-col overflow-hidden">
       <Toast />
       <Coachmarks />
 
-      {/* ════════ MAP — always at least 44% of the screen ════════ */}
-      <div className="relative" style={{ flex: "0 0 44%" }}>
+      {/* ════════ MAP — exactly 44% of screen height ════════ */}
+      <div className="relative" style={{ flex: "0 0 44%", minHeight: 0 }}>
         <MapView
           center={destination ? destination.lngLat : PICKUP.lngLat}
           zoom={destination ? 11 : 14}
@@ -74,7 +83,7 @@ export default function BookingPage() {
           <Wordmark />
         </div>
 
-        {/* Pickup address tag — floats in the map */}
+        {/* Pickup address tag */}
         <motion.button
           onClick={() => router.push("/destination")}
           whileTap={{ scale: 0.97 }}
@@ -91,7 +100,7 @@ export default function BookingPage() {
           <ChevronRight size={14} />
         </motion.button>
 
-        {/* Pulsing pin */}
+        {/* Pulsing pickup pin */}
         <div className="pointer-events-none absolute left-1/2 top-1/2 z-[5] -translate-x-1/2 -translate-y-1/2">
           <span className="relative grid h-6 w-6 place-items-center">
             <span className="pulse-ring absolute inset-0 rounded-full opacity-50" />
@@ -99,19 +108,34 @@ export default function BookingPage() {
           </span>
         </div>
 
-        {/* GPS button — right side of map */}
+        {/* GPS button */}
         <div className="absolute bottom-3 right-3 z-10">
           <IconButton
-            label="Use my location" tone="white"
+            label="My location" tone="white"
             onClick={() => showToast("Centered on your location", "ok")}
           >
             <TargetIcon size={18} />
           </IconButton>
         </div>
+
+        {/* Destination confirmed banner */}
+        <AnimatePresence>
+          {destination && (
+            <motion.div
+              initial={{ opacity: 0, y: -8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -8 }}
+              className="absolute bottom-3 left-3 z-10 flex items-center gap-2 rounded-2xl bg-white px-3 py-2 shadow-lg"
+            >
+              <span className="h-2.5 w-2.5 rounded-full bg-alert" />
+              <span className="max-w-[160px] truncate text-xs font-bold text-ink">{destination.title}</span>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
-      {/* ════════ BOTTOM PANEL — fills remaining space ════════ */}
-      <div className="flex flex-col bg-white" style={{ flex: "1 1 0", overflow: "hidden" }}>
+      {/* ════════ BOTTOM PANEL ════════ */}
+      <div className="flex flex-col bg-white" style={{ flex: "1 1 0", minHeight: 0, overflow: "hidden" }}>
 
         {/* Search bar */}
         <div className="px-4 pt-3 pb-0">
@@ -134,11 +158,21 @@ export default function BookingPage() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.14 }}
-                className="flex-1 text-left text-[16px] font-extrabold text-ink/60"
+                className={`flex-1 text-left text-[16px] font-extrabold ${destination ? "text-ink" : "text-ink/60"}`}
               >
                 {destination ? destination.title : "Where to?"}
               </motion.span>
             </AnimatePresence>
+            {destination && (
+              <motion.button
+                whileTap={{ scale: 0.85 }}
+                onClick={(e) => { e.stopPropagation(); setDestination(null); }}
+                className="grid h-8 w-8 shrink-0 place-items-center rounded-full bg-hairline text-muted text-lg font-black"
+                aria-label="Clear destination"
+              >
+                ×
+              </motion.button>
+            )}
           </motion.button>
         </div>
 
@@ -153,16 +187,17 @@ export default function BookingPage() {
               whileTap={{ scale: 0.94 }}
               onClick={() => setDestination(d)}
               className="flex shrink-0 items-center gap-1.5 rounded-full border border-hairline bg-white px-3 py-2 text-xs font-bold text-brand shadow-sm"
+              style={{ outline: destination?.id === d.id ? "2px solid var(--brand)" : undefined }}
             >
               <PinIcon size={13} /> {d.title}
             </motion.button>
           ))}
         </div>
 
-        {/* Thin divider */}
+        {/* Divider */}
         <div className="mx-4 mt-3 h-px bg-hairline" />
 
-        {/* Ride list — scrollable, compact rows */}
+        {/* Ride type list */}
         <div
           data-coach="rides"
           className="no-scrollbar flex-1 overflow-y-auto px-3 pt-1 pb-0"
@@ -184,9 +219,9 @@ export default function BookingPage() {
           ))}
         </div>
 
-        {/* Bottom actions — fixed to bottom of panel */}
+        {/* Bottom actions */}
         <div
-          className="shrink-0 px-4 pt-2 pb-2 space-y-2"
+          className="shrink-0 px-4 pt-2 space-y-2"
           style={{ paddingBottom: "calc(0.6rem + var(--sab,0px))" }}
         >
           {/* Toolbar chips */}
@@ -202,9 +237,9 @@ export default function BookingPage() {
             </Button>
           </div>
 
-          {/* Primary CTA */}
-          <Button full onClick={onRequest}>
-            request bitaksi
+          {/* Primary CTA with loading state */}
+          <Button full loading={requesting} onClick={onRequest}>
+            {requesting ? "Finding your taxi…" : "request bitaksi"}
           </Button>
 
           {/* HCI link */}

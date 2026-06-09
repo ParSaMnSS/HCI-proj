@@ -52,6 +52,7 @@ export default function RidePage() {
 
   const [driverPos, setDriverPos] = useState<LngLat | null>(null);
   const [confirmCancel, setConfirmCancel] = useState(false);
+  const [cancellingNow, setCancellingNow] = useState(false);
   const [secondsLeft, setSecondsLeft] = useState(30);
   const rafRef = useRef<number>(0);
 
@@ -225,6 +226,20 @@ export default function RidePage() {
             {active.phase === "searching" && (
               <span className="spin h-6 w-6 shrink-0 rounded-full border-[3px] border-brand/20 border-t-brand" />
             )}
+            {(active.phase === "accepted" || active.phase === "arriving") && (
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.4 }}
+                className="h-3 w-3 shrink-0 rounded-full bg-brand"
+              />
+            )}
+            {active.phase === "ontrip" && (
+              <motion.span
+                animate={{ opacity: [1, 0.3, 1] }}
+                transition={{ repeat: Infinity, duration: 1.8 }}
+                className="h-3 w-3 shrink-0 rounded-full bg-green"
+              />
+            )}
             {active.phase === "arrived" && (
               <motion.span
                 initial={{ scale: 0 }}
@@ -340,8 +355,19 @@ export default function RidePage() {
                 : "A ₺25 cancellation fee may apply as your driver is already on the way."}
             </p>
             <div className="mt-5 space-y-2">
-              <Button full onClick={() => { setConfirmCancel(false); cancelRide(); }}>
-                Yes, cancel
+              <Button
+                full
+                loading={cancellingNow}
+                onClick={() => {
+                  setCancellingNow(true);
+                  setTimeout(() => {
+                    setConfirmCancel(false);
+                    setCancellingNow(false);
+                    cancelRide();
+                  }, 500);
+                }}
+              >
+                {cancellingNow ? "Cancelling…" : "Yes, cancel"}
               </Button>
               <button onClick={() => setConfirmCancel(false)} className="w-full py-2 font-bold text-brand underline">
                 Keep my ride

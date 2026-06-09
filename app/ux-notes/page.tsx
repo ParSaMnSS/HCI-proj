@@ -2,11 +2,11 @@
 
 import { useRouter } from "next/navigation";
 import { useEffect, useState } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft } from "@/components/ui/icons";
 import { Toast } from "@/components/ui/Toast";
-import { setFaultRate, getFaultRate, forceFault, type FaultKind } from "@/lib/mock/faults";
 import { useStore } from "@/lib/store";
+import { DEMO_CONTROLS, type DemoButton, type DemoSlider, type DemoToggle } from "@/lib/demo/controls";
 
 type Note = { test: string; problem: string; solution: string };
 
@@ -30,18 +30,46 @@ const NOTES: Note[] = [
   { test: "Test 5", problem: "Confusing navigation", solution: "Linear flow with back buttons and clear status text at every step." },
 ];
 
-const FAULTS: { kind: FaultKind; label: string; emoji: string }[] = [
-  { kind: "no-drivers", label: "No drivers found", emoji: "🚫" },
-  { kind: "auth-failed", label: "Payment failed", emoji: "💳" },
-  { kind: "gps-weak", label: "Weak GPS", emoji: "📍" },
-  { kind: "driver-cancelled", label: "Driver cancels", emoji: "❌" },
-];
+// Split controls by type for rendering
+const buttonControls = DEMO_CONTROLS.filter((c): c is DemoButton => c.type === "button");
+const sliderControls = DEMO_CONTROLS.filter((c): c is DemoSlider => c.type === "slider");
+const toggleControls = DEMO_CONTROLS.filter((c): c is DemoToggle => c.type === "toggle");
 
 export default function UxNotesPage() {
   const router = useRouter();
   const showToast = useStore((s) => s.showToast);
-  const [rate, setRate] = useState(1);
-  useEffect(() => setRate(getFaultRate()), []);
+
+  // Slider values — hydrated from each slider's getValue()
+  const [sliderValues, setSliderValues] = useState<Record<string, number>>({});
+  const [toggleValues, setToggleValues] = useState<Record<string, boolean>>({});
+  const [firedButton, setFiredButton] = useState<string | null>(null);
+
+  useEffect(() => {
+    const sv: Record<string, number> = {};
+    sliderControls.forEach((s) => { sv[s.id] = s.getValue(); });
+    setSliderValues(sv);
+
+    const tv: Record<string, boolean> = {};
+    toggleControls.forEach((t) => { tv[t.id] = t.getValue(); });
+    setToggleValues(tv);
+  }, []);
+
+  function fireButton(b: DemoButton) {
+    b.action();
+    setFiredButton(b.id);
+    showToast(`Next ride: ${b.label}`, "warn");
+    setTimeout(() => setFiredButton(null), 1800);
+  }
+
+  function updateSlider(s: DemoSlider, raw: number) {
+    s.setValue(raw);
+    setSliderValues((prev) => ({ ...prev, [s.id]: raw }));
+  }
+
+  function updateToggle(t: DemoToggle, val: boolean) {
+    t.setValue(val);
+    setToggleValues((prev) => ({ ...prev, [t.id]: val }));
+  }
 
   return (
     <motion.div
@@ -70,48 +98,117 @@ export default function UxNotesPage() {
       </div>
 
       <div className="flex-1 overflow-y-auto px-4 pb-8">
-        <p className="mb-4 text-sm text-muted leading-relaxed">
-          This prototype keeps BiTaksi's visual identity but addresses every usability problem found across 5 user tests. Each improvement is built into the real flows.
+        <p className="mb-5 text-sm text-muted leading-relaxed">
+          This prototype keeps BiTaksi&apos;s visual identity but addresses every usability problem found across 5 user tests. Each improvement is built into the real flows.
         </p>
 
-        {/* Demo controls */}
+        {/* ── Demo controls ─────────────────────────────────────── */}
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
           className="mb-6 rounded-3xl border border-hairline p-5"
         >
           <h2 className="text-lg font-black text-ink mb-1">Demo controls</h2>
-          <p className="text-sm text-muted mb-4">Force a mock error on the next request to demonstrate the improved recovery flow.</p>
-
-          <div className="grid grid-cols-2 gap-2.5 mb-5">
-            {FAULTS.map((f) => (
-              <motion.button
-                key={f.kind}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => { forceFault(f.kind); showToast(`Next: ${f.label}`, "warn"); }}
-                className="flex items-center gap-2 rounded-2xl bg-chip px-4 py-3.5 text-sm font-bold text-brand"
-              >
-                <span>{f.emoji}</span> {f.label}
-              </motion.button>
-            ))}
-          </div>
-
-          <p className="mb-2 flex justify-between text-sm font-bold text-ink">
-            <span>Random error rate</span>
-            <span className="text-brand">{Math.round(rate * 100)}%</span>
+          <p className="text-sm text-muted mb-5">
+            Force errors and tweak behaviour to demonstrate the improved recovery flows.
+            New controls register in <code className="rounded bg-chip px-1 py-0.5 text-xs font-mono text-brand">lib/demo/controls.ts</code>.
           </p>
-          <input
-            type="range" min={0} max={100} value={Math.round(rate * 100)}
-            onChange={(e) => { const r = Number(e.target.value) / 100; setRate(r); setFaultRate(r); }}
-            className="w-full h-2 rounded-full accent-[var(--brand)]"
-            aria-label="Random error rate"
-          />
-          <div className="mt-1.5 flex justify-between text-xs text-muted">
-            <span>0% always succeeds</span><span>100% always fails</span>
-          </div>
+
+          {/* Fault buttons */}
+          {buttonControls.length > 0 && (
+            <div className="mb-5">
+              <p className="mb-2 text-xs font-bold uppercase tracking-widest text-muted">Force next error</p>
+              <div className="grid grid-cols-2 gap-2.5">
+                {buttonControls.map((b) => (
+                  <motion.button
+                    key={b.id}
+                    whileTap={{ scale: 0.93 }}
+                    onClick={() => fireButton(b)}
+                    className="relative flex items-center gap-2 rounded-2xl px-4 py-3.5 text-sm font-bold text-brand overflow-hidden"
+                    animate={{ backgroundColor: firedButton === b.id ? "#2e1a8f" : "#eef0f6" }}
+                  >
+                    <AnimatePresence mode="wait">
+                      {firedButton === b.id ? (
+                        <motion.span
+                          key="fired"
+                          initial={{ opacity: 0, scale: 0.7 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          exit={{ opacity: 0 }}
+                          className="flex items-center gap-2 text-cream w-full"
+                        >
+                          <span>✓</span> <span>Queued</span>
+                        </motion.span>
+                      ) : (
+                        <motion.span
+                          key="idle"
+                          initial={{ opacity: 0 }}
+                          animate={{ opacity: 1 }}
+                          className="flex items-center gap-2"
+                        >
+                          <span>{b.emoji}</span> <span>{b.label}</span>
+                        </motion.span>
+                      )}
+                    </AnimatePresence>
+                  </motion.button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Sliders */}
+          {sliderControls.map((s) => {
+            const val = sliderValues[s.id] ?? s.getValue();
+            return (
+              <div key={s.id} className="mb-4">
+                <div className="mb-2 flex justify-between text-sm font-bold text-ink">
+                  <span>{s.label}</span>
+                  <span className="text-brand">{val}{s.unit}</span>
+                </div>
+                <input
+                  type="range"
+                  min={s.min}
+                  max={s.max}
+                  step={s.step}
+                  value={val}
+                  onChange={(e) => updateSlider(s, Number(e.target.value))}
+                  className="w-full h-2 rounded-full accent-[var(--brand)]"
+                  aria-label={s.label}
+                />
+                <div className="mt-1 flex justify-between text-xs text-muted">
+                  <span>{s.min}{s.unit} — always succeeds</span>
+                  <span>{s.max}{s.unit} — always fails</span>
+                </div>
+              </div>
+            );
+          })}
+
+          {/* Toggles */}
+          {toggleControls.map((t) => {
+            const val = toggleValues[t.id] ?? t.getValue();
+            return (
+              <div key={t.id} className="flex items-center justify-between py-3 border-t border-hairline">
+                <div className="min-w-0 pr-4">
+                  <p className="text-sm font-bold text-ink">{t.label}</p>
+                  <p className="text-xs text-muted">{t.description}</p>
+                </div>
+                <motion.button
+                  whileTap={{ scale: 0.9 }}
+                  onClick={() => updateToggle(t, !val)}
+                  className="relative h-7 w-12 shrink-0 rounded-full transition-colors"
+                  animate={{ backgroundColor: val ? "var(--brand)" : "var(--chip)" }}
+                >
+                  <motion.span
+                    className="absolute top-[3px] h-[22px] w-[22px] rounded-full bg-white shadow"
+                    animate={{ x: val ? 22 : 3 }}
+                    transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                  />
+                </motion.button>
+              </div>
+            );
+          })}
         </motion.div>
 
-        {/* Notes grouped by test */}
+        {/* ── UX improvement notes ──────────────────────────────── */}
         {["Test 1", "Test 2", "Test 3", "Test 4", "Test 5"].map((t, ti) => (
           <motion.div
             key={t}
