@@ -5,6 +5,7 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Button } from "@/components/ui/Button";
 import { Toast } from "@/components/ui/Toast";
+import { Modal } from "@/components/ui/Modal";
 import { ChevronLeft, CardIcon, TrashIcon, CheckIcon, LockIcon, ShieldIcon, PlusIcon } from "@/components/ui/icons";
 import { useStore } from "@/lib/store";
 
@@ -16,6 +17,7 @@ export default function PaymentPage() {
   const removeCard = useStore((s) => s.removeCard);
   const showToast = useStore((s) => s.showToast);
   const [adding, setAdding] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
 
   return (
     <motion.div
@@ -111,7 +113,7 @@ export default function PaymentPage() {
               <motion.button
                 whileTap={{ scale: 0.85 }}
                 aria-label="Remove card"
-                onClick={() => { removeCard(c.id); showToast("Card removed", "warn"); }}
+                onClick={() => setConfirmDeleteId(c.id)}
                 className="grid h-10 w-10 place-items-center rounded-full text-alert"
               >
                 <TrashIcon size={18} />
@@ -140,6 +142,36 @@ export default function PaymentPage() {
               showToast("Card saved securely", "ok");
             }}
           />
+        )}
+      </AnimatePresence>
+
+      {/* Confirm remove card */}
+      <AnimatePresence>
+        {confirmDeleteId && (
+          <Modal onDismiss={() => setConfirmDeleteId(null)}>
+            <h2 className="text-xl font-black text-ink">Remove card?</h2>
+            <p className="mt-2 text-sm text-muted leading-relaxed">
+              This card will be permanently removed from your account.
+            </p>
+            <div className="mt-6 flex flex-col gap-2">
+              <Button
+                full
+                onClick={() => {
+                  removeCard(confirmDeleteId);
+                  showToast("Card removed", "warn");
+                  setConfirmDeleteId(null);
+                }}
+              >
+                Yes, remove it
+              </Button>
+              <button
+                onClick={() => setConfirmDeleteId(null)}
+                className="w-full py-2 font-bold text-brand underline"
+              >
+                Cancel
+              </button>
+            </div>
+          </Modal>
         )}
       </AnimatePresence>
     </motion.div>

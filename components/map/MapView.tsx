@@ -81,9 +81,8 @@ export default function MapView(props: MapViewProps) {
 
     map.on("load", () => {
       readyRef.current = true;
-      // Force a resize so MapLibre picks up the actual container dimensions
-      // (needed when the container height is set by flexbox percentages)
-      map.resize();
+      // Defer resize by one frame so the browser has committed the flex layout
+      setTimeout(() => map.resize(), 0);
       drawRoute();
       drawStaticMarkers();
     });

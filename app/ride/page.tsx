@@ -149,7 +149,7 @@ export default function RidePage() {
       <Toast />
 
       {/* Map — fixed at 48% so it's always visible */}
-      <div className="relative" style={{ flex: "0 0 48%" }}>
+      <div className="relative" style={{ height: "48dvh", flexShrink: 0 }}>
         <MapView
           center={PICKUP.lngLat} zoom={12}
           pickup={PICKUP.lngLat}

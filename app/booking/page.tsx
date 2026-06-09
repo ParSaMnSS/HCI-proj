@@ -50,7 +50,7 @@ export default function BookingPage() {
       <Toast />
 
       {/* ════════ MAP — exactly 44% of screen height ════════ */}
-      <div className="relative" style={{ flex: "0 0 44%", minHeight: 0 }}>
+      <div className="relative" style={{ height: "44dvh", flexShrink: 0 }}>
         <MapView
           center={destination ? destination.lngLat : PICKUP.lngLat}
           zoom={destination ? 11 : 14}
