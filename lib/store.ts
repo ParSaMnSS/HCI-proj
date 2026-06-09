@@ -51,6 +51,7 @@ type State = {
 
   // onboarding
   onboarded: boolean;
+  dismissedTips: string[];
 
   // toast
   toast: { id: number; msg: string; tone: "ok" | "warn" } | null;
@@ -71,6 +72,7 @@ type State = {
   removeCard: (id: string) => void;
 
   finishOnboarding: () => void;
+  dismissTip: (id: string) => void;
   showToast: (msg: string, tone?: "ok" | "warn") => void;
 };
 
@@ -174,6 +176,7 @@ export const useStore = create<State>((set, get) => ({
   cards: INITIAL_CARDS,
   active: null,
   onboarded: false,
+  dismissedTips: [],
   toast: null,
 
   setRideType: (id) => set({ rideTypeId: id }),
@@ -268,6 +271,14 @@ export const useStore = create<State>((set, get) => ({
     }),
 
   finishOnboarding: () => set({ onboarded: true }),
+
+  dismissTip: (id) =>
+    set((s) => {
+      const next = s.dismissedTips.includes(id) ? s.dismissedTips : [...s.dismissedTips, id];
+      // all 3 tips dismissed → mark fully onboarded
+      const allDone = ["search", "addcard", "request"].every((t) => next.includes(t));
+      return { dismissedTips: next, ...(allDone ? { onboarded: true } : {}) };
+    }),
 
   showToast: (msg, tone = "ok") => {
     const id = ++_toastId;
