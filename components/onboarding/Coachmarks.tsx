@@ -7,7 +7,7 @@ import { useStore } from "@/lib/store";
 const STEPS: { coach: string; label: string }[] = [
   { coach: "search",  label: "Tap here to enter your destination" },
   { coach: "addcard", label: "Add a payment card before booking" },
-  { coach: "request", label: "Tap here to confirm and book your ride" },
+  { coach: "request", label: "Tap here to book your ride" },
 ];
 
 interface Rect { top: number; left: number; width: number; height: number }
@@ -19,10 +19,9 @@ function getCoachRect(coach: string): Rect | null {
   return { top: r.top, left: r.left, width: r.width, height: r.height };
 }
 
-const PAD    = 10;   // spotlight cutout padding
-const RADIUS = 18;
-const BUBBLE_MARGIN = 14;    // gap between spotlight edge and bubble
-const SCREEN_EDGE   = 16;    // min distance from screen edge
+const PAD    = 8;
+const RADIUS = 16;
+const GAP    = 10; // gap between cutout edge and tooltip arrow tip
 
 export function Spotlight() {
   const onboarded = useStore((s) => s.onboarded);
@@ -33,16 +32,12 @@ export function Spotlight() {
   const [vh, setVh]           = useState(0);
   const [mounted, setMounted] = useState(false);
 
-  useEffect(() => {
-    setMounted(true);
-    setVh(window.innerHeight);
-  }, []);
+  useEffect(() => { setMounted(true); setVh(window.innerHeight); }, []);
 
   useLayoutEffect(() => {
     if (!mounted || onboarded) return;
     setVh(window.innerHeight);
-    const r = getCoachRect(STEPS[step].coach);
-    setRect(r);
+    setRect(getCoachRect(STEPS[step].coach));
   }, [step, mounted, onboarded]);
 
   if (!mounted || onboarded) return null;
@@ -55,35 +50,24 @@ export function Spotlight() {
   const label  = STEPS[step].label;
   const isLast = step === STEPS.length - 1;
 
-  // Decide whether bubble goes above or below the spotlight cutout.
-  // "Below" is preferred; switch to "above" if the target is in the lower 55%
-  // of the screen (so there's enough room above it).
-  let bubbleStyle: React.CSSProperties = { top: "40%" }; // fallback: center-ish
+  // Decide if tooltip sits above or below the cutout
+  const cutoutBottom = rect ? rect.top + rect.height + PAD : 0;
+  const cutoutTop    = rect ? rect.top - PAD : 0;
+  const spaceBelow   = vh - cutoutBottom;
+  const above        = spaceBelow < 90; // not enough room below → flip above
 
-  if (rect && vh > 0) {
-    const cutoutBottom = rect.top + rect.height + PAD;
-    const cutoutTop    = rect.top - PAD;
-    const spaceBelow   = vh - cutoutBottom;
-    const spaceAbove   = cutoutTop;
-    // Estimated bubble height: ~120px (card) + 32px (skip) + 12px (gap)
-    const BUBBLE_H = 164;
+  // Horizontal center of the spotlight target, clamped so tooltip stays on screen
+  const tooltipCenterX = rect
+    ? Math.min(Math.max(rect.left + rect.width / 2, 120), (typeof window !== "undefined" ? window.innerWidth : 400) - 120)
+    : 200;
 
-    if (spaceBelow >= BUBBLE_H + BUBBLE_MARGIN + SCREEN_EDGE) {
-      // Plenty of room below — place it below
-      const top = Math.min(
-        cutoutBottom + BUBBLE_MARGIN,
-        vh - BUBBLE_H - SCREEN_EDGE,
-      );
-      bubbleStyle = { top };
-    } else {
-      // Not enough room below — place it above
-      const bottom = Math.min(
-        vh - cutoutTop + BUBBLE_MARGIN,
-        vh - SCREEN_EDGE,
-      );
-      bubbleStyle = { bottom };
-    }
-  }
+  // Arrow tip Y position (where the arrow points)
+  const arrowTipY = above ? cutoutTop - GAP : cutoutBottom + GAP;
+
+  // Tooltip box top (below) or bottom (above)
+  const ARROW_H = 8;
+  const tooltipTop    = above ? undefined : arrowTipY + ARROW_H;
+  const tooltipBottom = above ? vh - arrowTipY + ARROW_H : undefined;
 
   return (
     <AnimatePresence>
@@ -92,83 +76,102 @@ export function Spotlight() {
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.22 }}
+        transition={{ duration: 0.2 }}
         className="absolute inset-0 z-[90] pointer-events-auto"
         onClick={advance}
         aria-label="Onboarding overlay"
       >
-        {/* Dark overlay with spotlight cutout */}
+        {/* Dark overlay with cutout */}
         <svg className="absolute inset-0 w-full h-full" style={{ display: "block" }}>
           <defs>
             <mask id="spotlight-mask">
               <rect x="0" y="0" width="100%" height="100%" fill="white" />
               {rect && (
                 <rect
-                  x={rect.left - PAD}
-                  y={rect.top - PAD}
-                  width={rect.width + PAD * 2}
-                  height={rect.height + PAD * 2}
-                  rx={RADIUS} ry={RADIUS}
-                  fill="black"
+                  x={rect.left - PAD} y={rect.top - PAD}
+                  width={rect.width + PAD * 2} height={rect.height + PAD * 2}
+                  rx={RADIUS} ry={RADIUS} fill="black"
                 />
               )}
             </mask>
           </defs>
           <rect x="0" y="0" width="100%" height="100%"
-            fill="rgba(15,10,45,0.80)" mask="url(#spotlight-mask)" />
+            fill="rgba(15,10,45,0.78)" mask="url(#spotlight-mask)" />
           {rect && (
             <rect
               x={rect.left - PAD} y={rect.top - PAD}
               width={rect.width + PAD * 2} height={rect.height + PAD * 2}
               rx={RADIUS} ry={RADIUS}
-              fill="none" stroke="rgba(255,255,255,0.3)" strokeWidth="1.5"
+              fill="none" stroke="rgba(255,255,255,0.28)" strokeWidth="1.5"
             />
           )}
         </svg>
 
-        {/* Label bubble — positioned to always stay fully on screen */}
+        {/* Tooltip pill — points at the spotlight target */}
         <motion.div
-          key={`label-${step}`}
-          initial={{ opacity: 0, scale: 0.93 }}
+          key={`tip-${step}`}
+          initial={{ opacity: 0, scale: 0.88 }}
           animate={{ opacity: 1, scale: 1 }}
-          exit={{ opacity: 0, scale: 0.93 }}
-          transition={{ type: "spring", stiffness: 320, damping: 26, delay: 0.08 }}
-          className="absolute left-1/2 -translate-x-1/2 flex flex-col items-center gap-3"
+          exit={{ opacity: 0, scale: 0.88 }}
+          transition={{ type: "spring", stiffness: 340, damping: 26, delay: 0.08 }}
+          className="absolute pointer-events-auto"
           style={{
-            ...bubbleStyle,
-            width: "calc(100% - 40px)",
-            maxWidth: 340,
+            left: tooltipCenterX,
+            transform: "translateX(-50%)",
+            ...(tooltipTop    !== undefined ? { top: tooltipTop }       : {}),
+            ...(tooltipBottom !== undefined ? { bottom: tooltipBottom } : {}),
           }}
           onClick={(e) => e.stopPropagation()}
         >
-          <div className="w-full rounded-3xl bg-white px-5 py-4 shadow-2xl">
-            {/* Step progress dots */}
-            <div className="mb-3 flex gap-1.5">
+          {/* Arrow pointing toward the element */}
+          <span
+            style={{
+              display: "block",
+              width: 0,
+              height: 0,
+              margin: "0 auto",
+              borderStyle: "solid",
+              ...(above
+                // arrow points DOWN (tooltip is above the element)
+                ? { borderWidth: "8px 7px 0 7px", borderColor: "var(--brand) transparent transparent transparent" }
+                // arrow points UP (tooltip is below the element)
+                : { borderWidth: "0 7px 8px 7px", borderColor: "transparent transparent var(--brand) transparent" }
+              ),
+            }}
+          />
+
+          {/* Pill bubble */}
+          <div
+            className="flex items-center gap-2 rounded-2xl px-4 py-2.5 shadow-lg"
+            style={{ background: "var(--brand)", whiteSpace: "nowrap" }}
+          >
+            {/* Step dots */}
+            <div className="flex items-center gap-1 shrink-0">
               {STEPS.map((_, i) => (
-                <motion.span
+                <span
                   key={i}
-                  animate={{ width: i === step ? "1.75rem" : "0.5rem" }}
-                  transition={{ type: "spring", stiffness: 300, damping: 24 }}
-                  className="h-1.5 rounded-full"
                   style={{
-                    background: i <= step ? "var(--brand)" : "var(--hairline)",
                     display: "block",
+                    width: i === step ? 18 : 6,
+                    height: 6,
+                    borderRadius: 9999,
+                    background: i <= step ? "rgba(255,255,255,0.95)" : "rgba(255,255,255,0.3)",
+                    transition: "width 0.25s",
                   }}
                 />
               ))}
             </div>
-            <p className="text-[15px] font-extrabold leading-snug text-ink">{label}</p>
-            <p className="mt-1 text-[12px] font-semibold text-muted">
-              {isLast ? "Tap anywhere to finish" : "Tap anywhere to continue"}
-            </p>
-          </div>
 
-          <button
-            onClick={(e) => { e.stopPropagation(); finish(); }}
-            className="text-xs font-bold text-white/60 underline underline-offset-2"
-          >
-            Skip tutorial
-          </button>
+            <span className="text-[13px] font-bold text-white leading-tight">{label}</span>
+
+            <button
+              onClick={(e) => { e.stopPropagation(); finish(); }}
+              className="shrink-0 grid h-5 w-5 place-items-center rounded-full bg-white/25 text-white text-[11px] font-black ml-1"
+              aria-label="Skip tutorial"
+            >
+              ×
+            </button>
+          </div>
         </motion.div>
       </motion.div>
     </AnimatePresence>
