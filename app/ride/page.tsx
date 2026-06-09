@@ -145,11 +145,11 @@ export default function RidePage() {
   }
 
   return (
-    <div className="absolute inset-0 flex flex-col">
+    <div className="flex flex-col overflow-hidden" style={{ flex: "1 1 0", minHeight: 0, width: "100%" }}>
       <Toast />
 
       {/* Map — fixed at 48% so it's always visible */}
-      <div className="relative" style={{ height: "48dvh", flexShrink: 0 }}>
+      <div className="relative" style={{ flex: "0 0 48%", minHeight: "180px" }}>
         <MapView
           center={PICKUP.lngLat} zoom={12}
           pickup={PICKUP.lngLat}

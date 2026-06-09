@@ -69,7 +69,11 @@ body {
 /* On phone: full-screen, content pushed inside safe zones */
 .phone-shell {
   width: 100%;
-  height: 100dvh;
+  /* Use 100% of body height (which is 100dvh) so children's height:100%
+     resolves to the content box (after safe-area padding), not the full viewport */
+  height: 100%;
+  display: flex;
+  flex-direction: column;
   position: relative;
   background: #fff;
   overflow: hidden;

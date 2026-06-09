@@ -46,12 +46,12 @@ export default function BookingPage() {
   }
 
   return (
-    <div className="absolute inset-0 flex flex-col overflow-hidden">
+    <div className="flex flex-col overflow-hidden" style={{ flex: "1 1 0", minHeight: 0, width: "100%" }}>
       <Toast />
       <Spotlight />
 
       {/* ════════ MAP — exactly 44% of screen height ════════ */}
-      <div className="relative" style={{ height: "44dvh", flexShrink: 0 }}>
+      <div className="relative" style={{ flex: "0 0 44%", minHeight: "180px" }}>
         <MapView
           center={destination ? destination.lngLat : PICKUP.lngLat}
           zoom={destination ? 11 : 14}
