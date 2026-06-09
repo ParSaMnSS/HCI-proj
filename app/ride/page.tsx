@@ -147,8 +147,8 @@ export default function RidePage() {
     <div className="absolute inset-0 flex flex-col">
       <Toast />
 
-      {/* Map */}
-      <div className="relative flex-1 min-h-0">
+      {/* Map — fixed at 48% so it's always visible */}
+      <div className="relative" style={{ flex: "0 0 48%" }}>
         <MapView
           center={PICKUP.lngLat} zoom={12}
           pickup={PICKUP.lngLat}
@@ -178,7 +178,7 @@ export default function RidePage() {
               <IconButton
                 label="Share trip"
                 tone="brand"
-                onClick={() => showToast("Trip link copied — share for safety", "ok")}
+                onClick={() => router.push("/safety")}
               >
                 <ShareIcon size={20} />
               </IconButton>
@@ -210,8 +210,8 @@ export default function RidePage() {
         </AnimatePresence>
       </div>
 
-      {/* Bottom sheet */}
-      <Sheet>
+      {/* Bottom sheet — fills remaining 52% */}
+      <Sheet className="flex-1 overflow-y-auto">
         {/* Status — cross-fades on phase change */}
         <AnimatePresence mode="wait">
           <motion.div

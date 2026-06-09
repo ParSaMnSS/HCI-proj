@@ -1,8 +1,8 @@
 "use client";
 
+import { useRouter } from "next/navigation";
 import { StarIcon, PhoneIcon, MessageIcon, ShieldIcon } from "@/components/ui/icons";
 import type { Driver } from "@/lib/mock/data";
-import { useStore } from "@/lib/store";
 
 /** Expanded driver info (UX improvement: BiTaksi shows very little). */
 export function DriverCard({
@@ -12,7 +12,7 @@ export function DriverCard({
   driver: Driver;
   etaLabel: string;
 }) {
-  const showToast = useStore((s) => s.showToast);
+  const router = useRouter();
   return (
     <div className="rounded-2xl border border-hairline bg-white p-3">
       <div className="flex items-center gap-3">
@@ -56,17 +56,17 @@ export function DriverCard({
       <div className="mt-3 grid grid-cols-3 gap-2">
         <ContactBtn
           label="Call"
-          onClick={() => showToast("Calling driver… (mock)")}
+          onClick={() => router.push("/call")}
           icon={<PhoneIcon size={18} />}
         />
         <ContactBtn
           label="Message"
-          onClick={() => showToast("Chat opened (mock)")}
+          onClick={() => router.push("/chat")}
           icon={<MessageIcon size={18} />}
         />
         <ContactBtn
           label="Safety"
-          onClick={() => showToast("Safety center (mock)")}
+          onClick={() => router.push("/safety")}
           icon={<ShieldIcon size={18} />}
         />
       </div>
